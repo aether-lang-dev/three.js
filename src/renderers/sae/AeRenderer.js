@@ -165,7 +165,9 @@ class AeRenderer {
 
 		if ( this._warned.has( what ) ) return;
 		this._warned.add( what );
-		console.warn( 'AeRenderer: ' + what + ' is not drawn yet' );
+		// sae has print and no console.
+		const say = globalThis.console ? globalThis.console.warn : globalThis.print;
+		if ( say ) say( 'AeRenderer: ' + what + ' is not drawn yet' );
 
 	}
 

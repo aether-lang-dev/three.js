@@ -47,6 +47,18 @@ AE3D_BATCH_FILES="$files" AE3D_BATCH_OUT=out xvfb-run -a ~/ae3d/build/test_batch
 python3 check_frame.py check out/dump.txt out
 ```
 
-The same page on sae itself (`gfx.scene`, `gfx.submit`) is sae's
-`site/gfx.ts`; sae does not link ae3d yet, so there the batch is checked
-and counted natively (`gfx.stats`) but not drawn.
+## On sae itself
+
+`page/index.ts` is the same README example as a sae page, importing
+`./three-sae.js` (copied there by `build.sh`). sae (e23d053 and later) has
+`gfx.scene` / `gfx.submit` / `gfx.stats`; it does not link ae3d yet, so each
+batch is checked and counted natively but not drawn. `spec_cube.ae` runs on
+sae's harness:
+
+```sh
+cd ~/scm/sae && tests/run_spec.sh ~/scm/three.js/sae-port/cube/spec_cube.ae ~/scm/three.js/sae-port/cube/page
+```
+
+On cachyos under Xvfb (2026-11-26) it passes: frame 1 arrives as 1,176 bytes
+(24 vertices, 12 triangles), frame 60 as 252, the same bytes as on Node;
+`render()` takes 0.1-0.2 ms, and 60 frames ran in 984 ms.

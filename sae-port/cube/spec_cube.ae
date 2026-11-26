@@ -1,0 +1,25 @@
+// The README cube as a sae page (page/index.ts): three.js runs unmodified
+// on sae's engine, and AeRenderer's batches arrive natively, one a frame:
+// the first sends the cube (24 vertices, 12 triangles), the 60th only its
+// draw. Run with sae's harness, from sae's checkout:
+//   tests/run_spec.sh ~/scm/three.js/sae-port/cube/spec_cube.ae ~/scm/three.js/sae-port/cube/page
+// MIT.
+import std.spec
+import saedriver as b
+import uidriver
+
+main() {
+    fw = spec.init()
+    uidriver.wait_server()
+    spec.describe(fw, "three.js's README cube on sae") {
+        spec.it("its batches reach gfx natively, one a frame, the mesh sent once") callback {
+            b.navigate(b.test_url("/"))
+            spec.assert_true(b.wait_for_console("cube frame 1: meshes 1, vertices 24, triangles 12, draws 1, 1176 bytes, drawn false"),
+                "the first frame sends the cube: 1,176 bytes, as on Node")
+            spec.assert_true(b.wait_for_console_secs("cube frame 60: meshes 1, vertices 24, triangles 12, draws 1, 252 bytes, drawn false", 60),
+                "the 60th sends only its draw")
+            b.assert_text("cube frame 60: meshes 1, vertices 24, triangles 12, draws 1, 252 bytes, drawn false", "the page says so")
+        }
+    }
+    return spec.run_summary(fw)
+}
