@@ -1,0 +1,21 @@
+{"check":{"compose":[0.354524,1.702806,0.987302,0,-0.383994,0.216668,-0.235803,0,-0.923167,-0.44328,1.096022,0,1,2,3,1],"invert":[0.088631,-1.535977,-0.410296,0,0.425701,0.866674,-0.197013,0,0.246825,-0.943214,0.487121,0,-1.68051,2.63227,-0.65704,1],"det":1.5,"decompose":[1,2,3,-0.05754,-0.36242,0.52917,0.765062,2,0.5,1.5],"slerp":[0.178411,0.178411,0.178411,0.951057],"cross":[6.5,-10,4.5],"lookAt":[0.857493,0,-0.514496,0,-0.291043,0.824621,-0.485071,0,0.424264,0.565685,0.707107,0,0,0,0,1],"perspective":[0.2,0,0,0,0,0.25,0,0,0,0,-1.002002,-1,0,0,-0.2002,0],"color":"2966a3","worldMatrix":[0.154731,0.365973,-1.960133,0,0.763312,1.805402,0.397339,0,1.842122,-0.778837,0,0,7,2,0,1],"worldPosition":[7,2,0],"lookAtQuat":[-0.140946,-0.801471,-0.208182,0.542622],"box":[54,144,1.870829,1,0,0,1,0,0,1,0,0],"sphere":[2145,11904,0.093797,0.995185,-0.028453,0.090556,0.995185,-0.03751],"knot":[585,3072,-1.555533,-1.802231,-0.889762,1.899988,1.802503,0.889738,0.39031,-0.224918,-0.892788,0.045983,-0.824324,-0.564248],"ray":[0,0,0.979796]}}
+{"time":"updateMatrixWorld flat 1000","ms":2.103822}
+{"time":"rotate+updateMatrixWorld flat 1000","ms":2.699502}
+{"time":"updateMatrixWorld nested 1000","ms":2.0515}
+{"time":"rotate+updateMatrixWorld nested 1000","ms":2.712044}
+{"time":"updateMatrixWorld flat 5000","ms":10.817469}
+{"time":"rotate+updateMatrixWorld flat 5000","ms":14.311596}
+{"time":"updateMatrixWorld nested 5000","ms":10.923777}
+{"time":"rotate+updateMatrixWorld nested 5000","ms":15.15004}
+{"time":"BoxGeometry()","ms":0.026404}
+{"time":"SphereGeometry(1,64,32)","ms":2.183052}
+{"time":"TorusKnotGeometry()","ms":0.794254}
+{"time":"TorusKnotGeometry(1,0.4,256,32)","ms":10.525433}
+{"time":"Matrix4.multiplyMatrices","ms":26.45003,"ops":20000}
+{"rate":"Matrix4.multiplyMatrices","opsPerSec":756143}
+{"time":"Matrix4.compose","ms":10.421781,"ops":20000}
+{"rate":"Matrix4.compose","opsPerSec":1919058}
+{"time":"Matrix4.invert","ms":33.04323,"ops":20000}
+{"rate":"Matrix4.invert","opsPerSec":605268}
+{"time":"Vector3.applyMatrix4","ms":8.880605,"ops":20000}
+{"rate":"Vector3.applyMatrix4","opsPerSec":2252099}
