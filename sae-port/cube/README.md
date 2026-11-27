@@ -50,15 +50,26 @@ python3 check_frame.py check out/dump.txt out
 ## On sae itself
 
 `page/index.ts` is the same README example as a sae page, importing
-`./three-sae.js` (copied there by `build.sh`). sae (e23d053 and later) has
-`gfx.scene` / `gfx.submit` / `gfx.stats`; it does not link ae3d yet, so each
-batch is checked and counted natively but not drawn. `spec_cube.ae` runs on
-sae's harness:
+`./three-sae.js` (copied there by `build.sh`), and shown with `gfx.view`:
+sae's GPU helper, sae-gfx (ae3d in a process of its own, over std.ipc; sae's
+`docs/gpu-pages.md`, "The GPU helper"), draws each batch offscreen and sends
+the picture back. The page turns the cube for 60 frames, then holds two
+poses (t = 1200 and 2600 ms) and prints, for each, what three.js's own
+maths says the picture must be (each face the eye sees: its centre's pixel
+and colour, as `readme_cube.js` works it out), then turns it until its scene
+is lost, and has a "New scene" button. `spec_cube.ae` runs on sae's harness,
+after sae's `gfx/build.sh`:
 
 ```sh
-cd ~/scm/sae && tests/run_spec.sh ~/scm/three.js/sae-port/cube/spec_cube.ae ~/scm/three.js/sae-port/cube/page
+cd ~/scm/sae && SAE_TEST_FLAGS=--uncontained-gfx tests/run_spec.sh ~/scm/three.js/sae-port/cube/spec_cube.ae ~/scm/three.js/sae-port/cube/page
 ```
 
-On cachyos under Xvfb (2026-11-26) it passes: frame 1 arrives as 1,176 bytes
-(24 vertices, 12 triangles), frame 60 as 252, the same bytes as on Node;
-`render()` takes 0.1-0.2 ms, and 60 frames ran in 984 ms.
+It checks the batches (frame 1 is 1,176 bytes, frame 60 252, as on Node),
+that the turning cube is drawn, each pose's faces at the view's pixels to
+3/255 of three.js's colours, the two pictures differing, and the helper
+killed mid-run (`kill -9`): the page is told its scene is lost and goes on,
+and a new scene is drawn by a new helper. `--uncontained-gfx`: no process
+sandbox can hold a GL driver yet (sae's `docs/gpu-pages.md`, "Containment").
+
+Verified 2026-11-27 on cachyos, Mesa 26.3.1 llvmpipe under Xvfb: it
+passes, every one of the 60 live frames drawn.

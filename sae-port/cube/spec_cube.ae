@@ -1,24 +1,85 @@
-// The README cube as a sae page (page/index.ts): three.js runs unmodified
-// on sae's engine, and AeRenderer's batches arrive natively, one a frame:
-// the first sends the cube (24 vertices, 12 triangles), the 60th only its
-// draw. Run with sae's harness, from sae's checkout:
+// The README cube as a sae page (page/index.ts), drawn: three.js runs
+// unmodified on sae's engine, AeRenderer hands sae one batch a frame, sae's
+// GPU helper (sae-gfx: ae3d in a process of its own, over std.ipc) draws it
+// offscreen, and gfx.view shows the picture in the page. Held to what
+// three.js itself says the picture must be (each face the eye sees, its
+// centre's colour, which the page prints by three.js's maths), the frames
+// differing, and the helper killed mid-run: the page told, the browser
+// going on, and a new scene drawn by a new helper. Run with sae's harness,
+// from sae's checkout, after gfx/build.sh (Linux: a display, Xvfb is fine):
 //   tests/run_spec.sh ~/scm/three.js/sae-port/cube/spec_cube.ae ~/scm/three.js/sae-port/cube/page
 // MIT.
 import std.spec
+import std.string
+import std.os
 import saedriver as b
 import uidriver
+
+// Each "x y r g b" of the page's expectation (`tag`'s n-th) held at the
+// view's pixel to 3/255: the misses, as text ("" when none).
+faces_(tag: string, n: int) -> string {
+    want = b.console_after("cube expect ${tag}: ", n)
+    if want == "" { return "no expectation printed for ${tag}" }
+    bad = ""
+    faces = string.string_split(want, ";")
+    k = 0
+    while k < string.string_array_size(faces) {
+        f = string.string_split(string.string_array_get(faces, k), " ")
+        x, _ = string.to_int(string.string_array_get(f, 0))
+        y, _ = string.to_int(string.string_array_get(f, 1))
+        r, _ = string.to_int(string.string_array_get(f, 2))
+        g, _ = string.to_int(string.string_array_get(f, 3))
+        bl, _ = string.to_int(string.string_array_get(f, 4))
+        // The view's pixel (x, y) where the canvas draws it (the scene is
+        // fitted to the canvas, as any vg.scene is).
+        cx = b.vg_px_x((x as float) + 0.5, 320.0, 240.0)
+        cy = b.vg_px_y((y as float) + 0.5, 320.0, 240.0)
+        if b.vg_pixel_near(cx, cy, r * 65536 + g * 256 + bl, 3) == 0 {
+            p = b.vg_pixel(cx, cy)
+            bad = "${bad} (${x}, ${y}) is ${(p >> 16) & 255} ${(p >> 8) & 255} ${p & 255}, three.js says ${r} ${g} ${bl};"
+        }
+        string.string_array_free(f)
+        k = k + 1
+    }
+    string.string_array_free(faces)
+    return bad
+}
 
 main() {
     fw = spec.init()
     uidriver.wait_server()
-    spec.describe(fw, "three.js's README cube on sae") {
-        spec.it("its batches reach gfx natively, one a frame, the mesh sent once") callback {
+    spec.describe(fw, "three.js's README cube on sae, drawn by the GPU helper") {
+        spec.it("turns in the page, each face the colour three.js says, and survives its helper killed") callback {
             b.navigate(b.test_url("/"))
-            spec.assert_true(b.wait_for_console("cube frame 1: meshes 1, vertices 24, triangles 12, draws 1, 1176 bytes, drawn false"),
+            spec.assert_true(b.wait_for_console("cube frame 1: meshes 1, vertices 24, triangles 12, draws 1, 1176 bytes"),
                 "the first frame sends the cube: 1,176 bytes, as on Node")
-            spec.assert_true(b.wait_for_console_secs("cube frame 60: meshes 1, vertices 24, triangles 12, draws 1, 252 bytes, drawn false", 60),
+            spec.assert_true(b.wait_for_console_secs("cube frame 60: meshes 1, vertices 24, triangles 12, draws 1, 252 bytes", 60),
                 "the 60th sends only its draw")
-            b.assert_text("cube frame 60: meshes 1, vertices 24, triangles 12, draws 1, 252 bytes, drawn false", "the page says so")
+            spec.assert_true(b.wait_for_console_secs("cube live: ", 30), "the live frames' last picture shown")
+            live = b.console_after("cube live: ", 1)
+            n, _ = string.to_int(string.string_substring(live, 0, string.string_index_of(live, " ")))
+            println("  live: ${live}; at the 60th frame: ${b.console_after("; 60 frames in ", 1)}")
+            spec.assert_true(n >= 2, "the cube was drawn as it turned (${n} pictures)")
+
+            spec.assert_true(b.wait_for_console_secs("cube pose 1200 shown", 30), "pose t=1200 shown")
+            spec.assert_str_eq(faces_("1200", 1), "", "t=1200: each face three.js says the eye sees, its colour at its centre")
+            first = b.vg_grid(320, 240, 8)
+            spec.assert_true(b.wait_for_console_secs("cube pose 2600 shown", 30), "pose t=2600 shown")
+            spec.assert_str_eq(faces_("2600", 1), "", "t=2600: likewise")
+            second = b.vg_grid(320, 240, 8)
+            spec.assert_true(string.length(first) > 1000 && first != second, "the two pictures differ")
+
+            // The helper killed mid-run: the page told, the browser going on.
+            spec.assert_true(b.wait_for_console("cube poses done"), "watching")
+            sae_pid = os.getenv("SAE_TEST_SAE_PID")
+            spec.assert_true(sae_pid != null && sae_pid != "", "the spec knows sae's pid (run_spec.sh)")
+            _k = os.system("kill -9 $(pgrep -x sae-gfx -P ${sae_pid})")
+            spec.assert_true(b.wait_for_console_secs("cube first lost: gfx.submit: this scene is lost (gfx: the GPU helper stopped", 15),
+                "the page is told its scene is lost")
+            b.assert_text("cube: lost", "the page goes on")
+            b.click("New scene")
+            spec.assert_true(b.wait_for_console_n("cube pose 1200 shown", 2), "a new scene, drawn by a new helper")
+            spec.assert_str_eq(faces_("1200", 2), "", "the new helper's picture: as three.js says")
         }
     }
     return spec.run_summary(fw)
